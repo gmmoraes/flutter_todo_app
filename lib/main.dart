@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'TodoListView.dart';
+import 'package:todo_app/Providers/TodoList.dart';
+import 'dart:math';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => TodoList(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -23,6 +33,7 @@ class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
   final String title;
+  //final todoListView = Provider.of<TodoListView>(context, listen: false);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -30,93 +41,62 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  var todoListView = TodoListView();
+  final txtFieldController = TextEditingController();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    txtFieldController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: 
+    return MaterialApp(
+      title: "Todo app",
+      home: Scaffold(
+        appBar: AppBar(title: Text("Todo app")),
+        body: Column(
+          mainAxisSize: MainAxisSize.max,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: txtFieldController,
+                    decoration: InputDecoration(
+                      hintText: "Add a to do",
+                      suffixIcon: IconButton(
+                        onPressed: () => txtFieldController.clear(),
+                        icon: Icon(Icons.clear),
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: () {
+                    Random random = new Random();
+                    int randomNumber = random.nextInt(100);
+                    TodoItem currentTodo = TodoItem(
+                        id: randomNumber,
+                        todo: Text(txtFieldController.text).data);
+                    Provider.of<TodoList>(context, listen: false)
+                        .add(currentTodo);
+                        txtFieldController.clear();
+                  },
+                )
+              ],
+            ),
 
-      TextField(
-        decoration: InputDecoration(
-          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.black)),
-          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.purpleAccent,width: 4)),
-          hintText: 'Add a to do'
-          ),
-        ),
-        
-        DataTable(
-      columns: const <DataColumn>[
-        DataColumn(
-          label: Text(
-            'Name',
-            style: TextStyle(fontStyle: FontStyle.italic),
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            'Age',
-            style: TextStyle(fontStyle: FontStyle.italic),
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            'Role',
-            style: TextStyle(fontStyle: FontStyle.italic),
-          ),
-        ),
-      ],
-      rows: const <DataRow>[
-        DataRow(
-          cells: <DataCell>[
-            DataCell(Text('Ravi')),
-            DataCell(Text('19')),
-            DataCell(Text('Student')),
+            ///LEMBRAR DO TRANSACTION QUE USA MAP PARA MOSTRAR NA LIST VIEW TUDO DISPONIVEL NA LISTA DE TRANSACTION
+            Expanded(
+              child: todoListView,
+            ),
           ],
         ),
-        DataRow(
-          cells: <DataCell>[
-            DataCell(Text('Jane')),
-            DataCell(Text('43')),
-            DataCell(Text('Professor')),
-          ],
-        ),
-        DataRow(
-          cells: <DataCell>[
-            DataCell(Text('William')),
-            DataCell(Text('27')),
-            DataCell(Text('Professor')),
-          ],
-        ),
-      ],
-    ),
-      
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }
