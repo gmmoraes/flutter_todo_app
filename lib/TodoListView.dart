@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:todo_app/Providers/TodoList.dart';
@@ -10,6 +12,10 @@ class TodoListView extends StatefulWidget {
 }
 
 class _TodoListViewState extends State<TodoListView> {
+  int editingIndex = -1;
+  //HashMap editingIndexed = new HashMap<int, String>();
+  final txtFieldController = TextEditingController();
+  TodoItem itemInEdition = TodoItem(id: -1, todo: "");
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -24,23 +30,53 @@ class _TodoListViewState extends State<TodoListView> {
         // list to fill up its available space, which is most likely more than the
         // number of todo items we have. So, we need to check the index is OK.
         List<TodoItem> _todoItems = Provider.of<TodoList>(context).getItems;
+        int foundId =
+            _todoItems.indexWhere((element) => element.id == editingIndex);
         if (index < _todoItems.length) {
-          return _buildTodoItem(_todoItems[index]);
+          //cleanEditinAction();
+          int idx = foundId == index ? editingIndex:-1;
+          return _buildTodoItem(_todoItems[index],idx);
+        } else if (foundId == index) {
+          return _buildTodoItem(_todoItems[foundId],editingIndex);
         }
       },
     );
   }
 
-  Widget _buildTodoItem(TodoItem item) {
-    return new ListTile(
-      leading: Wrap(
-        spacing: 12, // space between two icons
-        children: <Widget>[
-          _getDeleteButton(item.id), // icon-1
-          _getEditButton(item), // icon-2
-        ],
-      ), // ,
-      title: new Text(item.todo),
+  Widget _buildTodoItem(TodoItem item, int _editingIndex) {
+    return new Column(
+      children: [
+        Row(
+          children: <Widget>[
+            if (_editingIndex != -1)
+              Expanded(
+                child: TextField(
+                  controller: txtFieldController,
+                  decoration: InputDecoration(
+                    hintText: "edit to do",
+                    labelText: itemInEdition.todo,
+                    suffixIcon: IconButton(
+                      onPressed: () => textFieldAction(),
+                      icon: Icon(Icons.send),
+                    ),
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                  child: ListTile(
+                leading: Wrap(
+                  spacing: 12, // space between two icons
+                  children: <Widget>[
+                    _getDeleteButton(item.id), // icon-1
+                    _getEditButton(item), // icon-2
+                  ],
+                ), // ,
+                title: new Text(item.todo),
+              )),
+          ],
+        )
+      ],
     );
   }
 
@@ -57,8 +93,30 @@ class _TodoListViewState extends State<TodoListView> {
     return new IconButton(
       icon: Icon(Icons.edit),
       onPressed: () {
-        Provider.of<TodoList>(context, listen: false).edit(newItem);
-      },
+          setState((){
+            editingIndex = newItem.id;
+            itemInEdition = newItem;
+          });
+        },
+      // onPressed: () {
+      //     editingIndex = newItem.id;
+      //     itemInEdition = newItem;
+
+
+      //   // Provider.of<TodoList>(context, listen: false).edit(newItem);
+      // },
     );
+  }
+
+  void textFieldAction() {
+    itemInEdition.todo = txtFieldController.text;
+    Provider.of<TodoList>(context, listen: false).edit(itemInEdition);
+    cleanEditinAction();
+  }
+
+  void cleanEditinAction() {
+    txtFieldController.clear();
+    itemInEdition = TodoItem(id: -1, todo: "");
+    editingIndex = -1;
   }
 }
